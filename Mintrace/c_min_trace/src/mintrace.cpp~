@@ -1,0 +1,17 @@
+#include<iostream>
+#include<lac/sparsity_pattern.h>
+//#include<AFEPack/AMGSolver.h>
+#include "mintrace.h"
+
+TraceSolver::TraceSolver(){};
+TraceSolver::TraceSolver(const Matrix& a, const Matrix& m){
+  Matrix A=a;
+  Matrix M=m;
+}
+
+void TraceSolver::solve(std::vector<double>& x,double tol, u_int step){
+  
+}
+
+
+

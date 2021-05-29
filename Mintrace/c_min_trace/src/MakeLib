@@ -1,0 +1,3 @@
+#!/bin/bash
+#g++ CGsolver.cpp JacobiSolver.cpp sparsematrix.cpp VectorSolver.cpp -fPIC -shared -o ../lib/libsparse.so
+g++ ./*.cpp -fPIC -shared -o ../lib/libtrace.so

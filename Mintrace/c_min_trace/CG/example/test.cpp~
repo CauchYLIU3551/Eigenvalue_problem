@@ -1,0 +1,8 @@
+#include "../CGSolver.h"
+
+int main()
+{
+  CGSolver A;
+  std::cout<<A.tolerence()<<std::endl;
+  return 0;
+}

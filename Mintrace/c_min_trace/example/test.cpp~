@@ -1,0 +1,237 @@
+#include <iostream>
+#include <fstream>
+#include <iterator>
+#include <mintrace.h>
+// Following header files are used in the step-3 in the examples of deal.II;
+// Here just using these to get a large scale matrix as the test data.
+#include <deal.II/grid/tria.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+#include <deal.II/dofs/dof_accessor.h>
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/function.h>
+#include <deal.II/numerics/vector_tools.h>
+#include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/lac/vector.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/lac/compressed_sparsity_pattern.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/precondition.h>
+// Finally, this is for output to a file and to the console:
+#include <deal.II/numerics/data_out.h>
+#include <fstream>
+#include <iostream>
+
+using namespace dealii;
+
+class Step3
+{
+public:
+  Step3 ();
+
+  void run ();
+
+private:
+  void make_grid ();
+  void setup_system ();
+  void assemble_system ();
+  SparseMatrix<double> multiply();
+
+  //void solve ();
+  //
+  void output_results () const;
+
+  Triangulation<2>     triangulation;
+  FE_Q<2>              fe;
+  DoFHandler<2>        dof_handler;
+  SparsityPattern      sparsity_pattern;
+  SparseMatrix<double> system_matrix;
+
+  std::vector<double> x;
+
+};
+
+Step3::Step3 ()
+  :
+  fe (1),
+  dof_handler (triangulation)
+{}
+
+void Step3::make_grid ()
+{
+  // First create the grid and refine all cells five times. Since the initial
+  // grid (which is the square [-1,1]x[-1,1]) consists of only one cell, the
+  // final grid has 32 times 32 cells, for a total of 1024.
+  GridGenerator::hyper_cube (triangulation, -1, 1);
+  triangulation.refine_global (5);
+  // Unsure that 1024 is the correct number?  Let's see: n_active_cells
+  // returns the number of active cells:
+  std::cout << "Number of active cells: "
+            << triangulation.n_active_cells()
+            << std::endl;
+  
+  std::cout << "Total number of cells: "
+            << triangulation.n_cells()
+            << std::endl;
+  // Note the distinction between n_active_cells() and n_cells().
+}
+
+void Step3::setup_system ()
+{
+  dof_handler.distribute_dofs (fe);
+  std::cout << "Number of degrees of freedom: "
+            << dof_handler.n_dofs()
+            << std::endl;
+  
+  CompressedSparsityPattern c_sparsity(dof_handler.n_dofs());
+  DoFTools::make_sparsity_pattern (dof_handler, c_sparsity);
+  sparsity_pattern.copy_from(c_sparsity);
+
+  system_matrix.reinit (sparsity_pattern);
+
+  solution.reinit (dof_handler.n_dofs());
+  system_rhs.reinit (dof_handler.n_dofs());
+}
+
+void Step3::assemble_system ()
+{
+
+  QGauss<2>  quadrature_formula(2);
+
+  FEValues<2> fe_values (fe, quadrature_formula,
+                         update_values | update_gradients | update_JxW_values);
+
+  const unsigned int   dofs_per_cell = fe.dofs_per_cell;
+  const unsigned int   n_q_points    = quadrature_formula.size();
+
+  FullMatrix<double>   cell_matrix (dofs_per_cell, dofs_per_cell);
+  Vector<double>       cell_rhs (dofs_per_cell);
+
+  std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
+
+  DoFHandler<2>::active_cell_iterator
+  cell = dof_handler.begin_active(),
+  endc = dof_handler.end();
+  for (; cell!=endc; ++cell)
+    {
+      fe_values.reinit (cell);
+
+      cell_matrix = 0;
+      cell_rhs = 0;
+
+      for (unsigned int i=0; i<dofs_per_cell; ++i)
+        for (unsigned int j=0; j<dofs_per_cell; ++j)
+          for (unsigned int q_point=0; q_point<n_q_points; ++q_point)
+            cell_matrix(i,j) += (fe_values.shape_grad (i, q_point) *
+                                 fe_values.shape_grad (j, q_point) *
+                                 fe_values.JxW (q_point));
+
+      for (unsigned int i=0; i<dofs_per_cell; ++i)
+        for (unsigned int q_point=0; q_point<n_q_points; ++q_point)
+          cell_rhs(i) += (fe_values.shape_value (i, q_point) *
+                          1 *
+                          fe_values.JxW (q_point));
+
+      cell->get_dof_indices (local_dof_indices);
+      ///////////////////////
+      // Following commands compute the interior of the matrix and store them into the matrix.
+      
+      for (unsigned int i=0; i<dofs_per_cell; ++i)
+        for (unsigned int j=0; j<dofs_per_cell; ++j)
+          system_matrix.add (local_dof_indices[i],
+                             local_dof_indices[j],
+                             cell_matrix(i,j));
+
+      // And again, we do the same thing for the right hand side vector.
+      for (unsigned int i=0; i<dofs_per_cell; ++i)
+        system_rhs(local_dof_indices[i]) += cell_rhs(i);
+    }
+
+  std::map<types::global_dof_index,double> boundary_values;
+  VectorTools::interpolate_boundary_values (dof_handler,
+                                            0,
+                                            ZeroFunction<2>(),
+                                            boundary_values);
+
+  MatrixTools::apply_boundary_values (boundary_values,
+                                      system_matrix,
+                                      solution,
+                                      system_rhs);
+}
+
+ SparseMatrix<double> Step3::multiply(SparseMatrix<double> A, std::vector<double> x0)
+{
+  std::vector<double> x(x0.size(),0);
+  std::cout<<"TEST POINT 1 \n";
+  std::cout<<"This is the column number of A :: "<<A.n()<<"\n";
+  std::cout<<"The size of x0 :: "<<x0.size()<<"\n";
+  if (A.n()!=x0.size())
+    {
+      std::cout<<"Function multiply() ERROR: The sizes of matrix and vector are not same! Please check it!\n";
+    }
+  else
+    {
+      std::cout<<"TEST POINT 2 \n";
+      for(int k=0;k<A.m();k++)
+	{
+	  std::cout<<"this is the "<<k<<"th iterations \n";
+	  SparseMatrix<double>::const_iterator i=A.begin(k);
+	  
+	  while(i!=A.end(k))
+	    {
+	      x[k]+=i->value()*x0[i->column()];
+	      ++i;
+	    }
+	}
+      return x;
+    }
+}
+
+
+void Step3::run ()
+{
+  make_grid ();
+  setup_system();
+  assemble_system ();
+  std::cout<<system_matrix.m()<<"\n";
+  std::cout<<system_matrix.n()<<"\n";
+
+  std::cout<<system_matrix.begin()->value()<<"\n";
+  std::cout<<system_matrix.begin()->column()<<"\n";
+
+  std::vector<double> x(system_matrix.n(),1);
+
+  x=multiply(system_matrix, x);
+  
+  std::ofstream out ("sparse_matrix");
+  system_matrix.print(out);
+
+  /*
+  std::ofstream f("somefile.txt");
+  for(vector<double>::const_iterator l = x.begin(); l != x.end(); ++l)
+    {
+      f << *l << '\n';
+    }
+  */
+  std::ofstream output_file ("solution");
+  for (const auto &e : x) output_file << e << "\n";
+  
+}
+
+int main()
+{
+  Step3 laplace_problem;
+  laplace_problem.run ();
+
+  std::stringstream result;
+  
+  std::cout<<"hello world!"<<std::endl;
+  SparseMatrix<double> A;
+  return 0;
+}

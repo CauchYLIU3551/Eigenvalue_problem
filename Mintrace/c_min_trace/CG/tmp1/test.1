@@ -1,0 +1,93 @@
+#include "CG/CGSolver.h"
+
+void fun2(int *a,int **b)
+{
+  //b=&a;
+  **b=*a;
+  std::cout<<"This is value of b"<<**b<<std::endl;
+}
+
+void fun3(int &w, int **b)
+{
+  **b=w;
+}
+
+int main()
+{
+  int a=2312321,c=2;
+  int *b=&c;
+  //b=&a;
+  // fun3(a,&b);
+  std::cout<<*b<<std::endl;
+  CGSolver AAA;
+ 
+  dealii::SparseMatrix<double> A,M;
+  // std::ofstream sparsematrix1 ("original_matrix.1");
+  //A.print(sparsematrix1);
+  /*
+  std::vector<unsigned int> row_length(10,10);
+  unsigned int t=3;
+  dealii::SparsityPattern sparsity_pattern(10,10,{2,3,3,3,3,3,3,3,3,2});
+  dealii::SparsityPattern sp2(3,3,{2,3,2});
+  sp2.add(0,1);
+  sp2.add(1,0);
+  sp2.add(1,2);
+  sp2.add(2,1);
+  sparsity_pattern.add(1,2);
+  sparsity_pattern.add(0,1);
+  sparsity_pattern.add(9,8);
+  for (int i=1;i<9;i++)
+    {
+      sparsity_pattern.add(i,i+1);
+      sparsity_pattern.add(i,i-1);
+    }
+  
+  A.reinit(sparsity_pattern);
+  M.reinit(sp2);
+    // In this way, I can construct a SparseMatrix to be the test data for the algorithm.
+  for (int k=0;k<A.m();k++)
+    {
+      dealii::SparseMatrix<double>::iterator i=A.begin(k);
+      i->value()=2;
+      while(i!=A.end(k))
+	{
+	  i->value()+=1;
+	  ++i;
+	}
+    }
+
+      // In this way, I can construct a SparseMatrix to be the test data for the algorithm.
+ 
+  for (int k=0;k<M.m();k++)
+    {
+      dealii::SparseMatrix<double>::iterator i=M.begin(k);
+      i->value()=3;
+      while(i!=M.end(k))
+	{
+	  i->value()-=1;
+	  ++i;
+	}
+    }
+ 
+  std::cout<<AAA.tolerence()<<std::endl;
+  CGSolver solve(A), sol2(M);
+  std::ofstream sparsematrix2 ("sparse_matrix.2");
+  A.print(sparsematrix2);
+  std::cout<<solve.A->n()<<std::endl;
+  
+  dealii::Vector<double> x0(10),B(10), x1(3),B2(3);
+  B[0]=4;
+  for(int i=1;i<9;i++)
+    {
+      B[i]=5;
+    }
+  B[9]=4;
+  B2[0]=1;
+  B2[2]=1.8;
+  std::cout<<"test1\n";
+  solve.solve(x0,B,1.0e-12,100);
+  sol2.solve(x1,B2,1.0e-3,20);
+ */ 
+  // std::cout<<(*P).n()<<std::endl;
+  return 0;
+}
