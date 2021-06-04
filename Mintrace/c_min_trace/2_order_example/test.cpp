@@ -24,7 +24,7 @@
 #include <AFEPack/BilinearOperator.h>
 #include <AFEPack/Operator.h>
 #include <AFEPack/Geometry.h>
-#include <AFEPack/Geometry.h>
+#include <AFEPack/BoundaryCondition.h>
 
 #include <trace/mintrace.h>
 #include <trace/Miscellaneous.h>
@@ -132,6 +132,51 @@ public:
   }
 };
 
+void boundary_condition_apply(const FEMSpace<double, DIM>& sp, 
+		SparseMatrix<double>& A, 
+		BoundaryConditionAdmin<double,DIM> boundary,
+		bool preserve_symmetry = true)
+{
+  u_int n_dof = sp.n_dof();
+  const SparsityPattern& spA = A.get_sparsity_pattern();
+  const std::size_t * rowstart = spA.get_rowstart_indices();
+  const u_int * colnum = spA.get_column_numbers();
+  
+  for(u_int i=0; i< n_dof; ++ i)
+  {
+	  int bm = sp.dofInfo(i).boundary_mark;
+	  std::cout<<"The "<<i<<"-th dof corresponding boundary mark is:"<<bm<<std::endl;
+  }
+ 
+  int numOfbm = 0; 
+  for (u_int i = 0; i < n_dof; ++ i){
+    int bm = sp.dofInfo(i).boundary_mark;
+    if (bm == 0) continue;
+    // For this case only 1 for Drichlet boundary condition.
+    if (bm != 1) continue; // Attention, For this case specially.
+
+    numOfbm += 1;
+
+    for (u_int j = rowstart[i]+1; j < rowstart[i+1]; ++ j){
+	    A.global_entry(j) -= A.global_entry(j);
+    }
+    if (preserve_symmetry) {
+      for (u_int j = rowstart[i] + 1;j < rowstart[i + 1];++ j) {
+        u_int k = colnum[j];
+        const u_int * p = std::find(&colnum[rowstart[k] + 1],
+                                    &colnum[rowstart[k + 1]], i);
+        if (p != &colnum[rowstart[k+1]]) {
+          u_int l = p - &colnum[rowstart[0]];
+          A.global_entry(l) -= A.global_entry(l);
+        }
+      }
+    }
+  }
+  
+  std::cout<<"!@@@@@@@@@@The number of Dirchlet is :"<<numOfbm<<std::endl;    
+    
+}
+
 int main(int argc, char * argv[])
 {
   /// 准备网格
@@ -144,9 +189,9 @@ int main(int argc, char * argv[])
   CoordTransform<DIM,DIM> crd_trs;
   crd_trs.readData("triangle.crd_trs");
   TemplateDOF<DIM> tmp_dof(tmp_geo);
-  tmp_dof.readData("triangle.1.tmp_dof");
+  tmp_dof.readData("triangle.2.tmp_dof");
   BasisFunctionAdmin<double,DIM,DIM> bas_fun(tmp_dof);
-  bas_fun.readData("triangle.1.bas_fun");
+  bas_fun.readData("triangle.2.bas_fun");
 
   std::vector<TemplateElement<double,DIM> > tmp_ele(1);
   tmp_ele[0].reinit(tmp_geo, tmp_dof, crd_trs, bas_fun);
@@ -163,14 +208,12 @@ int main(int argc, char * argv[])
   fem_space.buildDofBoundaryMark();
 
   /// 准备初值
-  FEMFunction<double,DIM> u_h(fem_space), u_h2(fem_space);
+  FEMFunction<double,DIM> u_h(fem_space);
   Operator::L2Interpolate(&_u_, u_h);
-  Operator::L2Interpolate(&_u_, u_h2);
 
   /// 准备边界条件
-  Vector<double> rhs, rhs2;
+  Vector<double> rhs;
   Operator::L2Discretize(&f, fem_space, rhs, 4);
-  Operator::L2Discretize(&f, fem_space, rhs2, 4);
 
   BoundaryFunction<double,DIM> boundary(BoundaryConditionInfo::DIRICHLET,
                                         1,
@@ -193,13 +236,24 @@ int main(int argc, char * argv[])
   stiff_matrix.algebricAccuracy()=3;
   stiff_matrix.build();
 
-  boundary_admin.apply(stiff_matrix, u_h, rhs);
+  boundary_condition_apply(fem_space, stiff_matrix, boundary_admin);
 
   Mass_Matrix mass_matrix(fem_space);
   mass_matrix.algebricAccuracy()=3;
   mass_matrix.build();
+  //boundary_condition_apply(fem_space, mass_matrix, boundary_admin);
 
-  boundary_admin.apply(mass_matrix, u_h2, rhs2);
+
+  StiffMatrix<2,double> stiff_matrix2(fem_space);
+  stiff_matrix2.algebricAccuracy() = 4;
+  stiff_matrix2.build();
+  boundary_condition_apply(fem_space, stiff_matrix2, boundary_admin);
+
+  MassMatrix<2,double> mass_matrix2(fem_space);
+  mass_matrix2.algebricAccuracy() = 4;
+  mass_matrix2.build();
+  boundary_condition_apply(fem_space, mass_matrix2, boundary_admin);
+
   
   /*
   /// 准备右端项
@@ -335,25 +389,37 @@ int main(int argc, char * argv[])
   //std::cout << "\n\tt = " <<  t << std::endl;
 
   // Print the stiffness matrix in to .txt and .gnuplot form.
-  std::ofstream sparsematrix2 ("stiff_matrix.1");
-  stiff_matrix.print(sparsematrix2);
+ // std::ofstream sparsematrix2 ("stiff_matrix.1");
+ // stiff_matrix.print(sparsematrix2);
 
   std::filebuf fb;
   fb.open ("stiff_matrix.txt",std::ios::out);
   std::ostream os(&fb);
   stiff_matrix.print_formatted(os, 3, true, 0, "0.0", 1);
   fb.close();
+
+  std::filebuf fb3;
+  fb3.open ("stiff_matrix2.txt",std::ios::out);
+  std::ostream os3(&fb3);
+  stiff_matrix2.print_formatted(os3, 3, true, 0, "0.0", 1);
+  fb3.close();
   
 
  // Print the mass matrix into .txt and .gnuplot form. 
-  std::ofstream sparsematrix  ("mass_matrix.1");
-  mass_matrix.print(sparsematrix);
+//  std::ofstream sparsematrix  ("mass_matrix.1");
+ // mass_matrix.print(sparsematrix);
 
   std::filebuf fb2;
   fb2.open ("mass_matrix.txt",std::ios::out);
   std::ostream os2(&fb2);
   mass_matrix.print_formatted(os2, 3, true, 0, "0.0", 1);
   fb2.close();
+
+  std::filebuf fb4;
+  fb4.open ("mass_matrix2.txt",std::ios::out);
+  std::ostream os4(&fb4);
+  mass_matrix2.print_formatted(os4, 3, true, 0, "0.0", 1);
+  fb4.close();
 
 
  /* 
