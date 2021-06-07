@@ -1,0 +1,14 @@
+#ifndef _EigenSolver_h_
+#define _EigenSolver_h_
+
+#include <lac/sparse_matrix.h>
+#include <lac/sparsity_pattern.h>
+#include <math.h>
+#include <vector>
+class EigenSolver
+{
+  public:
+
+}
+
+#endif

@@ -291,7 +291,7 @@ int main(int argc, char * argv[])
   AMGSolver solver;
   solver.lazyReinit(mat);
   solver.solve(u_h, rhs, 1.0e-08, 50);*/
-  TraceSolver solver(stiff_matrix, mass_matrix);
+  TraceSolver solver(stiff_matrix2, mass_matrix2);
 
   /*
   std::vector<double>rhs(stiff_matrix.m(),0),x(12,0);

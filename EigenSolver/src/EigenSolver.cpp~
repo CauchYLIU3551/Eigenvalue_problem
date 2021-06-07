@@ -1,0 +1,81 @@
+#include<EigenSolver/EigenSolver.h>
+#include<EigenSolver/Miscellaneous.h>
+
+#include "CG/CGSolver.h"
+
+#include<stdio.h>
+#include<assert.h>
+#include<iostream>
+EigenSolver::EigenSolver(){};
+EigenSolver::EigenSolver(const Matrix& a, const Matrix& m){
+  A=&a;
+  M=&m;
+  assert(A->m()==A->n());
+  assert(M->m()==M->n());
+  assert(A->m()==M->m());
+  // initializing the vector of theta;
+  // theta.resize(A->m());
+}
+
+void EigenSolver::PowerSolve(std::vector<double>& x,
+			     double lambda,
+			     int max_iter,
+			     double tol)
+{
+  int iter = 0;
+  int p;
+  double ERR;
+  std::vector<double> y(A->m()),tempAx;
+  max_norm(x, p);
+  lambda = x[p];
+  AX(1.0/lambda, x);
+  while (iter < max_iter)
+    {
+      tempAx = multiply(A, x);
+      CGSolver sol(*M);
+      sol.solve(y, tempAx, 1.0e-3,20);
+      max_norm(y, p);
+      lambda = y[p];
+      if (fabs(lambda) < tol)
+	{
+	  std::cout<<"Lambda is "<<lambda<<"\n And the vector y is:\n";
+	  for(int i=0; i<y.size();i++)
+	  {
+  	    std::cout<<y[i]<<" ";
+	  }
+	  std::cout<<"\n";
+	  std::cout<<"The matrices have the eigenvalue 0.\n";
+	  break;
+	}
+      AX(1.0/lambda, y);
+      AYPX(-1.0, y, x);
+      ERR = infi_Norm(x);
+      if (ERR < tol)
+	{
+	  std::cout<<"After "<<iter+1<<" iterations, the eigenvalue is "<<lambda<<"\n";
+	  
+	  break;
+	}
+      iter++;
+    }
+  if (iter == max_iter)
+    {
+      std::cout<<"Error of y and x is: "<<ERR<<"\n";
+      std::cout<<"y is\n";
+      for(int i=0; i<y.size();i++)
+          {
+            std::cout<<y[i]<<" ";
+          }
+      std::cout<<"\n";
+
+      std::cout<<"x is\n";
+      for(int i=0; i<x.size();i++)
+          {
+            std::cout<<x[i]<<" ";
+          }
+      std::cout<<"\n";
+
+
+      std::cout<<"The maximum number of iterations exceeded";
+    }
+}
