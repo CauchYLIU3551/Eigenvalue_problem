@@ -12,9 +12,13 @@ class EigenSolver
   EigenSolver();
   EigenSolver(const Matrix& a, const Matrix& m);
   void PowerSolve(std::vector<double>& x, 
-		  double lambda, 
+		  double& lambda, 
 		  int max_iter = 100,
 		  double tol = 1.e-3);
+  void IPowerSolve(std::vector<double>& x,
+		   double& lambda,
+		   int max_iter = 100,
+		   double tol = 1.e-3);
  private:
   const Matrix* A;
   const Matrix* M;

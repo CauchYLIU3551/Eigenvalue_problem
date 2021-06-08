@@ -1,7 +1,7 @@
 /**
  * @file   test.cpp
- * @author Robert Lie
- * @date   Wed Feb 28 11:45:08 2007
+ * @author Chengyu Liu 
+ * @date   Tue 08 June 2021
  *
  * @brief  这是个抛物型方程的例子，非常简单，中间就没有解释太多了
  *
@@ -28,7 +28,7 @@
 
 #include <trace/mintrace.h>
 #include <trace/Miscellaneous.h>
-
+#include <EigenSolver/EigenSolver.h>
 #define DIM 2
 #define PI (4.0*atan(1.0)) 
 
@@ -292,6 +292,7 @@ int main(int argc, char * argv[])
   solver.lazyReinit(mat);
   solver.solve(u_h, rhs, 1.0e-08, 50);*/
   TraceSolver solver(stiff_matrix2, mass_matrix2);
+ // EigenSolver sol2(stiff_matrix2, mass_matrix2);
 
   /*
   std::vector<double>rhs(stiff_matrix.m(),0),x(12,0);
@@ -344,6 +345,10 @@ int main(int argc, char * argv[])
       std::cout<<solver.lambda[i]<<std::endl;
     }
   std::cout<<"\n";
+
+  //std::vector<double> x(stiff_matrix2.m(),1);
+  //double lambda_1=0;
+  //sol2.PowerSolve(x,lambda_1);
 
   /*
   std::vector<double> exact_eigen={2.0*PI*PI,PI*PI,PI*PI,0.0};

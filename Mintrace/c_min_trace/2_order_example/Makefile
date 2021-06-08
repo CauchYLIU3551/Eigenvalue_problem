@@ -6,7 +6,7 @@ source = $(wildcard *.cpp)
 object = $(patsubst %.cpp, %.o, $(source))
 LDFLAGS += -L~/AFEPack/library/lib -lAFEPack
 CXXFLAGS += -I/usr/local/dealii-8.1.0/base/include -I/usr/local/dealii-8.1.0/lac/include -I/usr/local/dealii-8.1.0/include -I/usr/local/dealii-8.1.0/include/deal.II  -g -O2 -D__SERIALIZATION__ -DMULTITHREAD -pthread -fPIC -std=c++11 -ftemplate-depth-256 -I~/AFEPack/library/include -I/usr/local/include/trace -I/usr/local/include/CG
-LIBS += -ldeal_II -L/usr/local/dealii-8.1.0/lib -L~/AFEPack/lib -L../CG/lib  -lm -ldl -ltrace -lCG
+LIBS += -ldeal_II -L/usr/local/dealii-8.1.0/lib -L~/AFEPack/lib -L../CG/lib  -lm -ldl -ltrace -lCG -leigsolver
 
 
 
