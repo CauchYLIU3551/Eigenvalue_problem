@@ -161,3 +161,165 @@ void EigenSolver::IPowerSolve(std::vector<double>& x,
       std::cout<<"The maximum number of iterations exceeded\n";
     }
 }
+
+std::vector<std::vector<double>> EigenSolver::get_AX(std::vector<std::vector<double>> X )
+{
+  std::vector<std::vector<double>> AX;
+  AX.clear();
+  //MX.resize(X.size());
+  std::vector<double> temp(X.size(),0);
+  for(int j=0;j<X[0].size();j++)
+    {
+      for (int i=0;i<X.size();i++)
+        {
+          temp[i]=X[i][j];
+        }
+      temp=multiply(A,temp);
+      AX.push_back(temp);// so in this way, MX[i][j] = MX(j, i) in fact. Because in computing, I store the columns of M*X in every row of MX;
+    }
+  return AX;
+};
+
+
+// The function is used to compute the projection of v into u 
+// under M-inner-productsComputing the project of <u, v> corresponding to M;
+std::vector<double> EigenSolver::proj_M(std::vector<double> u, std::vector<double> v)
+{
+  double delta=0;
+  std::vector<double> Mv,Mu;
+  Mv=multiply(M,v);
+  Mu=multiply(M,u);
+  delta=inner(u,Mv)/inner(u,Mu);
+  for(int i=0;i<u.size();i++)
+    {
+      v[i]=delta*u[i];
+    }
+  return v;
+}
+
+// GS orthogonalize the Matrix X corresponding with matrix M;
+void EigenSolver::GS_M(std::vector<std::vector<double>> & X)
+{
+  transpose(X);
+  std::vector<std::vector<double>> tempX(X);
+  for(int i=1;i<tempX.size();i++)
+    {
+      for(int j=0;j<i;j++)
+        {
+          std::vector<double> temp_proj;
+          temp_proj=proj_M(X[j], tempX[i]);
+          for(int k=0;k<tempX[0].size();k++)
+            {
+              X[i][k]=X[i][k]-temp_proj[k];
+            }
+        }
+    }
+
+  // std::cout<<"This is the matrix X during the GS_M process\n";
+  // show_matrix(X);
+
+  for (int k=0;k<X.size();k++)
+    {
+      std::vector<double> temp_Xk;
+      temp_Xk=multiply(M,X[k]);
+      double norm=0;
+      norm=sqrt(inner(X[k],temp_Xk));
+      for(int i=0;i<X[0].size();i++)
+        {
+          X[k][i]=X[k][i]/norm;
+        }
+    }
+  transpose(X);
+}
+
+
+void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
+			       std::vector<double>& lambda,
+			       int p,
+			       int max_iter,
+			       double tol)
+{
+  int k=0;
+  double res=10;
+  std::vector<double> tempX(A->m(), 0), tempaX(A->m(), 0);
+  std::vector<std::vector<double>> H;
+  while(k < max_iter)
+    {
+      transpose(X);
+      std::cout<<"The matrix X is :\n";
+      show_matrix(X);
+      for (int i = 0; i < p; i ++)
+	{
+	  std::vector<double> tempMb;
+	  tempMb = multiply(M, X[i]);
+	  CGSolver sol(*A);
+	  sol.solve(X[i], tempMb, 1.0e-5, A->m());
+	}
+      transpose(X);
+      std::cout<<"After CGSolver, the result of A^-1 * X is \n";
+      show_matrix(X);
+      GS_M(X);
+      std::cout<<"After M-GS, the result of X is\n";
+      show_matrix(X);
+      H=get_AX(X);
+      std::cout<<"The matrix M*X is \n";
+      show_matrix(H);
+      multiply(H, X); // Compute the matrix H = Q* A Q;
+      std::cout<<"Matrix X' * M *X is \n";
+      show_matrix(H);
+      QRSolver(H, X);
+      std::cout<<"After shur decomposition the matrix H and X are:\n";
+      show_matrix(H);
+      std::cout<<"Matrix X :\n";
+      show_matrix(X);
+      // get_residual ;
+      for (int i = 0; i < p; i ++)
+	{
+	  for(int j = 0; j < X.size();j++)
+	    {
+	      tempX[j] = X[j][i];
+	    }
+	  tempaX=tempX;
+	  tempX=multiply(A, tempX);
+	  std::cout<<"The vector AX[i] is \n";
+	  show_vector(tempX);
+	  tempaX=multiply(M, tempaX);
+	  
+	  AX(H[i][i], tempaX);
+	  std::cout<<"The vector lambda*MX[i] is:\n";
+	  show_vector(tempaX);
+	  AYPX(-1.0, tempaX, tempX);
+	  std::cout<<"After AYPX() the vector AX[i] is :\n";
+	  show_vector(tempX);
+	  std::cout<<"the lambda*MX[i] is :\n";
+	  show_vector(tempaX);
+	  std::cout<<"The infi norm is : "<<infi_Norm(tempX)<<"\n";
+	  if ( infi_Norm(tempX)<res)
+	    {
+	      res=infi_Norm(tempX);
+	    }
+	}
+     
+      if (res<tol)
+	{
+	  lambda.clear();
+	  for(int j=0; j<H.size();j++)
+	    {
+	      lambda.push_back(H[j][j]);
+	    }
+	  std::cout<<"The residual is "<<res<<"\n";
+	  return;
+	  //break;
+	}
+      k++;
+    }
+  lambda.clear();
+  for(int j=0; j<H.size();j++)
+    {
+      lambda.push_back(H[j][j]);
+    }
+  std::cout<<"The maximum number of iteration exceeded.\n";
+  // std::cout<<"The numerical value of eigenvalues are :\n";
+}
+
+

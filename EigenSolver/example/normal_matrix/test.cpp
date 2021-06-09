@@ -148,6 +148,19 @@ int main()
     std::cout<<x2[k]<<" ";
   }
   std::cout<<"\n";
+  int eig_num=3;
+  std::vector<double> tempxx(eig_num, 0), lam_3(eig_num,0);
+  std::vector<std::vector<double>> x3(3, tempxx);
+  x3[0][0]=1;
+  x3[1][1]=1;
+  x3[2][2]=1;
+  sol3.BIPowerSolve(x3,lam_3,3);
+    for (int k=0;k<eig_num;k++)
+  {
+    std::cout<<lam_3[k]<<" ";
+  }
+  std::cout<<"\n";
+
 
   // std::cout<<(*P).n()<<std::endl;
   std::ofstream sparsematrix ("sparse_matrix.2");
