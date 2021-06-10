@@ -120,10 +120,16 @@ void TraceSolver::GS_M()
   transpose(X);
 }
 
+/*
 //void TraceSolver::Householder(std::vector<std::vector<double>> &a){};
 void TraceSolver::Householder(std::vector<std::vector<double>> &a)
 {
   //initialize the matrix X
+  
+  // Set tolerence to eliminate the situation that we get a number = - 0.0;
+  double tolerence = 1.e-12;
+  long double temp_1, temp_2;
+  
   std::vector<double> temp(a.size(),0);
   // std::vector<std::vector<double>> tempX;
   // identity_matrix(tempX);
@@ -145,7 +151,10 @@ void TraceSolver::Householder(std::vector<std::vector<double>> &a)
 	{
 	  q+=a[i][k]*(a[i][k]);
 	}
-
+      if (q<tolerence)
+        {
+	  continue;
+	}
       // Computing the value of alpha
       if(a[k+1][k]==0)
 	{
@@ -216,7 +225,23 @@ void TraceSolver::Householder(std::vector<std::vector<double>> &a)
 	    {
 	      for(int t=k+1;t<n;t++)
 		{
-		  temp[i-k-1]+=v[i-k]*v[t-k]*Pk[t][j]/(2*RSQ);
+		  temp_1=v[i-k]*v[t-k]*Pk[t][j];
+		  temp_2=(2*RSQ);
+		  if (fabs(temp_1) < tolerence )
+		    {
+		      //temp_1=fabs(temp_1)
+		      temp[i-k-1]+=0;
+		      continue;
+		    }
+		  if(fabs(temp_2)<tolerence)
+		    {
+		      //temp_2=fabs(temp_2);
+		      temp[i-k-1]+=0;
+		      continue;
+		    }
+                  
+		  temp[i-k-1]+=1.e10*temp_1/(1.e10*temp_2);		  
+		  // temp[i-k-1]+=v[i-k]*v[t-k]*Pk[t][j]/(2*RSQ);
 		}
 	    }
 	  for (int i=k+1;i<=j;i++)
@@ -229,6 +254,88 @@ void TraceSolver::Householder(std::vector<std::vector<double>> &a)
     }
 
 }
+*/
+
+
+void TraceSolver::Householder(std::vector<std::vector<double>> &A)
+{
+  int n=A.size();
+  double q, tolerence = 1.e-8; // tolerence set a level for the tiny value;
+  double alpha;
+  double RSQ, r, PROD;
+  std::vector<double> u(n), v(n), z(n), w(n);
+  std::vector<std::vector<double>> Pk;
+  for (int k=0;k<n-2;k++)
+    {
+      q=0;
+      for(int j=k+1;j<n;j++)
+	{
+	  q+=A[j][k]*A[j][k];
+	}
+      if (q<tolerence)
+      {
+        continue;
+      }
+      if(fabs(A[k+1][k])<tolerence)
+	{
+	  alpha = -sqrt(q);
+	}
+      else
+	{
+	  alpha = -sqrt(q)*A[k+1][k]/fabs(A[k+1][k]);
+	}
+      RSQ = alpha*(alpha-A[k+1][k]);
+      // std::cout<<"flag1\n";
+      r = sqrt(RSQ/2);
+      for(int i=0;i<k;i++)
+	{
+	  v[i]=0;
+	}
+
+      v[k]=0;
+      v[k+1]=A[k+1][k]-alpha;
+      for(int i = k+2;i<n;i++)
+	{
+	  v[i]=A[i][k];
+      	}
+      w=v;
+      //std::cout<<"flag2\n";
+      AX(1.0/(2*r), w);
+      //multiply(A, w);
+      //AX(1.0/r, u);
+      //
+      //std::cout<<"flag3\n";
+      //PROD = inner(v, u);
+      //z = u;
+     // AYPX(PROD/(2*RSQ), v, z);
+
+  //std::cout<<"flag4\n";
+      Pk = Householder_matrix(w);
+
+      // std::cout<<"flag5\n";
+      //    std::cout<<"This is the "<<k+1<<"-th iteration:\n";
+      //   std::cout<<"The alpha is ::::"<<alpha<<"\n";
+      //    std::cout<<"r is :::::"<<r<<"\n";
+      //    std::cout<<"vector w is :::\n";
+      //    show_vector(w);
+      //    std::cout<<"The matrix P is :: \n";
+      //     show_matrix(Pk);
+      
+      // Update the P matrix that orthogonalize the matrix A;
+      multiply(X, Pk);
+
+      // Update A = Pk * A * Pk;
+      multiply(A, Pk);
+      multiply(Pk, A);
+      A = Pk;
+
+///////////////////////////////////////////////////
+      //    std::cout<<"The matrix A is :: \n";
+      //   show_matrix(A);
+
+    }
+}
+
 
 //void TraceSolver::QR(std::vector<std::vector<double>> &a){};
 ///////////////

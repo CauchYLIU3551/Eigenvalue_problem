@@ -182,6 +182,7 @@ void multiply(std::vector<std::vector<double>> &A, std::vector<std::vector<doubl
     int n = A.size();
     int m = B.size();
     int col = B[0].size();
+    double tempX;
     std::vector<double> temp(col);
     std::vector<std::vector<double>> A0(n, temp);
 
@@ -190,7 +191,7 @@ void multiply(std::vector<std::vector<double>> &A, std::vector<std::vector<doubl
 	std::cout<<"Function Multiply() ERROR: Please Check these two matrix size!!!\n";
 	return;
       }
-    
+    /*   
     if (col < n)
       {
         for (int i = 0; i < n; i++)
@@ -237,6 +238,22 @@ void multiply(std::vector<std::vector<double>> &A, std::vector<std::vector<doubl
 	  }
         A = A0;
 	}
+    */
+    for(int i=0;i<n;i++)
+      {
+	for(int j=0;j<col;j++)
+	  {
+	    tempX = 0;
+	    for(int k=0;k<m;k++)
+	      {
+		tempX+=A[i][k]*B[k][j];
+	      }
+	    A0[i][j]=tempX;
+	  }
+      }
+    A.clear();
+    A=A0;
+    //std::cout<<"The size of the matrix A is "<<A.size()<<" x "<<A[0].size()<<"\n";
 }
 
 
@@ -385,6 +402,11 @@ void CG(std::vector<std::vector<double>> A, std::vector<double>& x, std::vector<
 void Householder(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> & X)
 {
   //initialize the matrix X
+
+  // Set tolerence to eliminate the situation that we get a number = - 0.0;
+  double tolerence = 1.e-10;
+  long double temp_1, temp_2;
+  
   std::vector<double> temp(a.size(),0);
   // std::vector<std::vector<double>> tempX;
   // identity_matrix(tempX);
@@ -394,8 +416,9 @@ void Householder(std::vector<std::vector<double>> &a, std::vector<std::vector<do
       //    X[j][j]=1;
   //  }
   int n=a.size();
-  std::vector<std::vector<double>> Pk;
-
+  std::vector<std::vector<double>> Pk;//, tempX;
+  // tempX = X;
+  long double RSQ;
   for(int k=0;k<n-2;k++)
     {
       identitymatrix(Pk, n);
@@ -406,18 +429,21 @@ void Householder(std::vector<std::vector<double>> &a, std::vector<std::vector<do
         {
           q+=a[i][k]*(a[i][k]);
         }
-
+      if(q<tolerence)
+        {
+	  continue;
+	}
       // Computing the value of alpha
-      if(a[k+1][k]==0)
+      if(fabs(a[k+1][k])<tolerence)
         {
           alpha=-sqrt(q);
         }
       else
         {
-          alpha=-sqrt(q)*a[k+1][k]/abs(a[k+1][k]);
+          alpha=-sqrt(q)*a[k+1][k]/fabs(a[k+1][k]);
         }
 
-      double RSQ=alpha*alpha-alpha*a[k+1][k]; // RSQ = 2r^2;
+      RSQ=alpha*alpha-alpha*a[k+1][k]; // RSQ = 2r^2;
       std::vector<double> v(n-k,0), u(n-k,0), z(n-k,0);
       v[0]=0;
       v[1]=a[k+1][k]-alpha;
@@ -468,23 +494,40 @@ void Householder(std::vector<std::vector<double>> &a, std::vector<std::vector<do
       a[k][k+1]=a[k+1][k];
       for (int j=k+1;j<n;j++)
         {
-          std::vector<double> temp(j-k,0);
+          std::vector<double> tempttt(j-k,0);
           for(int i=k+1;i<=j;i++)
             {
               for(int t=k+1;t<n;t++)
                 {
-                  temp[i-k-1]+=v[i-k]*v[t-k]*Pk[t][j]/(2*RSQ);
+		  temp_1=v[i-k]*v[t-k]*Pk[t][j];
+		  temp_2=(2*RSQ);
+		  if (fabs(temp_1) < tolerence )
+		    {
+		      //temp_1=fabs(temp_1)
+		      tempttt[i-k-1]+=0;
+		      continue;
+		    }
+		  if(fabs(temp_2)<tolerence)
+		    {
+		      //temp_2=fabs(temp_2);
+		      tempttt[i-k-1]+=0;
+		      continue;
+		    }
+                  //tempttt[i-k-1]+=v[i-k]*v[t-k]*Pk[t][j]/(2*RSQ);
+		  tempttt[i-k-1]+=1.e10*temp_1/(1.e10*temp_2);
                 }
             }
+
           for (int i=k+1;i<=j;i++)
             {
-              Pk[i][j]-=2*temp[i-k-1];
+              Pk[i][j]-=2*tempttt[i-k-1];
               Pk[j][i]=Pk[i][j];
             }
         }
       multiply(X,Pk);
+     
     }
-
+  // X=tempX;
 }
 
 
@@ -567,9 +610,15 @@ void QRSolver(std::vector<std::vector<double>> &a, std::vector<std::vector<doubl
 
       b.clear();
 
+      // std::cout<<"Before Householder a is :::;;\n";
+      // show_matrix(a);
+      // std::cout<<"X is :::::::;\n";
+      // show_matrix(X);
       Householder(a, X);
       // std::cout<<"The matrix X after householder is :::::::::::::\n";
-      //    show_matrix(X);
+      // show_matrix(X);
+      // std::cout<<"The matrix a after householder is ::::::::::::::\n";
+      // show_matrix(a);
 
       identitymatrix(Qk,n);
 

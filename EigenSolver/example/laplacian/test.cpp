@@ -26,8 +26,9 @@
 #include <AFEPack/Geometry.h>
 #include <AFEPack/BoundaryCondition.h>
 
-#include <trace/mintrace.h>
-#include <trace/Miscellaneous.h>
+//#include <trace/mintrace.h>
+#include <CG/CGSolver.h>
+#include <EigenSolver/Miscellaneous.h>
 #include <EigenSolver/EigenSolver.h>
 #define DIM 2
 #define PI (4.0*atan(1.0)) 
@@ -280,7 +281,8 @@ int main(int argc, char * argv[])
   AMGSolver solver;
   solver.lazyReinit(mat);
   solver.solve(u_h, rhs, 1.0e-08, 50);*/
-  TraceSolver soll(stiff_matrix, mass_matrix);
+  //TraceSolver soll(stiff_matrix, mass_matrix);
+  CGSolver AAAA;
   EigenSolver solver(stiff_matrix, mass_matrix);
   /*
   std::vector<double>rhs(stiff_matrix.m(),0),x(12,0);
@@ -339,7 +341,27 @@ int main(int argc, char * argv[])
   std::vector<double> x2(stiff_matrix.m(),1);
   solver.IPowerSolve(x2, lambda, 100, 1.e-3);
 
-  std::cout<<"This is the minimal eigenvalues of AX=lambda Mx;\n";
+  int eig_num=3;
+  std::vector<double> tempxx(eig_num,0), lam_3(eig_num,0);
+  std::vector<std::vector<double>> x3(stiff_matrix.m(),tempxx);
+  for(int k=0;k<eig_num;k++)
+  {
+    x3[k][k]=1;
+  }
+  solver.BIPowerSolve(x3, lam_3, eig_num, 100, 1.e-3);
+  std::cout<<"The "<<eig_num<<" smallest eigenvalues are:\n";
+
+  for (int k=0;k<eig_num;k++)
+  {
+    std::cout<<lam_3[k]<<" ";
+  }
+  std::cout<<"\n";
+
+  std::cout<<"The matrix are:\n";
+  show_matrix(x3);
+
+
+//  std::cout<<"This is the minimal eigenvalues of AX=lambda Mx;\n";
   /*
   for (int i=0;i < x2.size();i++)
   {

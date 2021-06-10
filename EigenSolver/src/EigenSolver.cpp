@@ -242,12 +242,12 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
   int k=0;
   double res=10;
   std::vector<double> tempX(A->m(), 0), tempaX(A->m(), 0);
-  std::vector<std::vector<double>> H;
+  std::vector<std::vector<double>> H, Qk;
   while(k < max_iter)
     {
       transpose(X);
-      std::cout<<"The matrix X is :\n";
-      show_matrix(X);
+      // std::cout<<"The matrix X is :\n";
+      // show_matrix(X);
       for (int i = 0; i < p; i ++)
 	{
 	  std::vector<double> tempMb;
@@ -256,23 +256,29 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
 	  sol.solve(X[i], tempMb, 1.0e-5, A->m());
 	}
       transpose(X);
-      std::cout<<"After CGSolver, the result of A^-1 * X is \n";
-      show_matrix(X);
+      // std::cout<<"After CGSolver, the result of A^-1 * X is \n";
+      // show_matrix(X);
       GS_M(X);
-      std::cout<<"After M-GS, the result of X is\n";
-      show_matrix(X);
+      // std::cout<<"After M-GS, the result of X is\n";
+      // show_matrix(X);
       H=get_AX(X);
-      std::cout<<"The matrix M*X is \n";
-      show_matrix(H);
+      // std::cout<<"The matrix M*X is \n";
+      // show_matrix(H);
       multiply(H, X); // Compute the matrix H = Q* A Q;
-      std::cout<<"Matrix X' * M *X is \n";
-      show_matrix(H);
-      QRSolver(H, X);
-      std::cout<<"After shur decomposition the matrix H and X are:\n";
-      show_matrix(H);
-      std::cout<<"Matrix X :\n";
-      show_matrix(X);
+      // std::cout<<"Matrix X' * M *X is \n";
+      // show_matrix(H);
+      //  std::cout<<"The size of matrix X'*M*X is "<<H.size()<<" x "<<H[0].size()<<"\n";
+      identitymatrix(Qk, p);
+      // std::cout<<"The matrix Qk is \n";
+      // show_matrix(Qk);
+      QRSolver(H, Qk);
+      // std::cout<<"After shur decomposition the matrix H and X are:\n";
+      // show_matrix(H);
+      multiply(X,Qk);
+      // std::cout<<"Matrix X :\n";
+      // show_matrix(X);
       // get_residual ;
+      res=0;
       for (int i = 0; i < p; i ++)
 	{
 	  for(int j = 0; j < X.size();j++)
@@ -281,20 +287,20 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
 	    }
 	  tempaX=tempX;
 	  tempX=multiply(A, tempX);
-	  std::cout<<"The vector AX[i] is \n";
-	  show_vector(tempX);
+	  //  std::cout<<"The vector AX[i] is \n";
+	  // show_vector(tempX);
 	  tempaX=multiply(M, tempaX);
 	  
 	  AX(H[i][i], tempaX);
-	  std::cout<<"The vector lambda*MX[i] is:\n";
-	  show_vector(tempaX);
+	  // std::cout<<"The vector lambda*MX[i] is:\n";
+	  // show_vector(tempaX);
 	  AYPX(-1.0, tempaX, tempX);
-	  std::cout<<"After AYPX() the vector AX[i] is :\n";
-	  show_vector(tempX);
-	  std::cout<<"the lambda*MX[i] is :\n";
-	  show_vector(tempaX);
-	  std::cout<<"The infi norm is : "<<infi_Norm(tempX)<<"\n";
-	  if ( infi_Norm(tempX)<res)
+	  // std::cout<<"After AYPX() the vector AX[i] is :\n";
+	  // show_vector(tempX);
+	  // std::cout<<"the lambda*MX[i] is :\n";
+	  // show_vector(tempaX);
+	  // std::cout<<"The infi norm is : "<<infi_Norm(tempX)<<"\n";
+	  if ( infi_Norm(tempX)>res)
 	    {
 	      res=infi_Norm(tempX);
 	    }

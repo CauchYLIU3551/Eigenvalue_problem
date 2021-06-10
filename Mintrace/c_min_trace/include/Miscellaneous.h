@@ -1,6 +1,27 @@
 #include<cmath>
 #include<lac/sparsity_pattern.h>
 #include<lac/sparse_matrix.h>
+
+// Multiplication of a double parameter with a vector.
+void AX(double a, std::vector<double>& x)
+{
+  for (int i = 0; i < x.size(); i++)
+    {
+      x[i]=a*x[i];
+    }
+}
+
+// Compute x-ay and store the solution vector in x;
+void AYPX(double a, std::vector<double> y, std::vector<double>& x)
+{
+  //std::vector<double> tempx(x.size());
+  for(int i=0; i < x.size(); i++)
+    {
+      x[i] = a*y[i] + x[i];
+    }
+
+}
+
 // Multiplication of SparseMatrix A and vector x0;
 std::vector<double> multiply(const SparseMatrix<double>* A, std::vector<double> x0)
 {
@@ -338,4 +359,26 @@ void CG(std::vector<std::vector<double>> A, std::vector<double>& x, std::vector<
 	  res[i]=rhs[i]-temp;
 	}
     }
+}
+
+
+// Compute the permutation matrix P in householder transform, i.e. P = I - 2w*w'
+std::vector<std::vector<double>> Householder_matrix(std::vector<double> w)
+{
+  int n = w.size();
+//  std::vector<double> temp(n,0);
+  std::vector<std::vector<double>> E;//, wwt(n, temp);
+  // std::cout<<"flag5\n";
+  identitymatrix(E, n);
+  // std::cout<<"flag6\n";
+  for (int i=0; i< n;i++)
+    {
+      for(int j=i; j<n;j++)
+	{
+	  E[i][j] = E[i][j] - 2 * w[i]*w[j];
+	  E[j][i] = E[i][j];
+	}
+    }
+  // std::cout<<"flag7\n";
+  return E;
 }
