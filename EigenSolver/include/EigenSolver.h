@@ -29,8 +29,10 @@ class EigenSolver
 		    int p,
 		    int max_iter = 100,
 		    double tol = 1.e-3);
-  // Get (MX)T;
+  // Get (AX)T;
   std::vector<std::vector<double>> get_AX(std::vector<std::vector<double>> X);
+  // Get M^-1 * A * X;
+  std::vector<std::vector<double>> get_MAX(std::vector<std::vector<double>> X);
   // The function is used to compute the projection of v into u 
   // under M-inner-productsComputing the project of <u, v> corresponding to M;
   std::vector<double> proj_M(std::vector<double> u, std::vector<double> v);

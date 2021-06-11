@@ -180,6 +180,27 @@ std::vector<std::vector<double>> EigenSolver::get_AX(std::vector<std::vector<dou
   return AX;
 };
 
+// This function compute M^-1 * A * X;
+std::vector<std::vector<double>> EigenSolver::get_MAX(std::vector<std::vector<double>> X )
+{
+  std::vector<std::vector<double>> MAX;
+  MAX.clear();
+  //MX.resize(X.size());
+  std::vector<double> temp(X.size(),0), tempAx;
+  CGSolver sol(*M);
+  for(int j=0;j<X[0].size();j++)
+    {
+      for (int i=0;i<X.size();i++)
+        {
+          temp[i]=X[i][j];
+        }
+      tempAx=multiply(A,temp);
+      sol.solve(temp, tempAx, 1.e-5, A->m()); // This step solve that M temp = tempAx, to get M^-1 * A * x;
+      MAX.push_back(temp);// so in this way, MX[i][j] = MX(j, i) in fact. Because in computing, I store the columns of M*X in every row of MX;
+    }
+  transpose(MAX);
+  return MAX;
+}
 
 // The function is used to compute the projection of v into u 
 // under M-inner-productsComputing the project of <u, v> corresponding to M;
@@ -242,7 +263,7 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
   int k=0;
   double res=10;
   std::vector<double> tempX(A->m(), 0), tempaX(A->m(), 0);
-  std::vector<std::vector<double>> H, Qk;
+  std::vector<std::vector<double>> H, Qk, MAX;
   while(k < max_iter)
     {
       transpose(X);
@@ -261,10 +282,24 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
       GS_M(X);
       // std::cout<<"After M-GS, the result of X is\n";
       // show_matrix(X);
-      H=get_AX(X);
-      // std::cout<<"The matrix M*X is \n";
+
+
+      ////// Begin to compute X'* M^-1 * A *X;
+      //H=get_AX(X);
+      // std::cout<<"The matrix A*X is \n";
       // show_matrix(H);
-      multiply(H, X); // Compute the matrix H = Q* A Q;
+
+
+      ////// Compute M^-1 * A *X
+      
+
+      //////// Then we can get the matrix M^-1 * A * X;
+      transpose(X);
+      H = X;
+      transpose(X);
+      MAX = get_MAX(X);
+      
+      multiply(H, MAX); // Compute the matrix H = Q* A Q;
       // std::cout<<"Matrix X' * M *X is \n";
       // show_matrix(H);
       //  std::cout<<"The size of matrix X'*M*X is "<<H.size()<<" x "<<H[0].size()<<"\n";
