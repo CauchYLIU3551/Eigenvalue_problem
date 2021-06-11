@@ -1,5 +1,6 @@
 #include "CG/CGSolver.h"
 #include <EigenSolver/EigenSolver.h>
+#include <EigenSolver/Miscellaneous.h>
 void fun2(int *a,int **b)
 {
   //b=&a;
@@ -160,7 +161,8 @@ int main()
     std::cout<<lam_3[k]<<" ";
   }
   std::cout<<"\n";
-
+  std::cout<<"The eigenvectors are:\n";
+  show_matrix(x3);
 
   // std::cout<<(*P).n()<<std::endl;
   std::ofstream sparsematrix ("sparse_matrix.2");
