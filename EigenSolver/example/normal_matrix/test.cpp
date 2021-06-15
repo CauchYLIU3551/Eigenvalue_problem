@@ -155,7 +155,16 @@ int main()
   x3[0][0]=1;
   x3[1][1]=1;
   x3[2][2]=1;
-  sol3.BIPowerSolve(x3,lam_3,eig_num);
+  for (int i=0;i<x3.size();i++)
+  {
+    for(int j=0;j<x3[0].size();j++)
+    {
+      x3[i][j] = ((double) rand() / (RAND_MAX));
+    }
+  }
+  std::cout<<"The initial matrix x3 is :: \n";
+  show_matrix(x3);
+  sol3.BIPowerSolve(x3,lam_3,eig_num,100);
     for (int k=0;k<eig_num;k++)
   {
     std::cout<<lam_3[k]<<" ";

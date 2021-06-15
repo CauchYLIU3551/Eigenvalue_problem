@@ -261,45 +261,93 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
 			       double tol)
 {
   int k=0;
-  double res=10;
+  double res=10, temp_eig;
+  std::vector<double> tempMb, tempR(p);
   std::vector<double> tempX(A->m(), 0), tempaX(A->m(), 0);
-  std::vector<std::vector<double>> H, Qk, MAX;
+  std::vector<std::vector<double>> H, Qk, MAX, tempA, R(p, tempR), Z, tempZ(p,tempR),tempQ(p,tempR);
+  GS_M(X);
+
   while(k < max_iter)
     {
       transpose(X);
-      // std::cout<<"The matrix X is :\n";
-      // show_matrix(X);
+      //std::cout<<"The matrix X is :\n";
+      //show_matrix(X);
       for (int i = 0; i < p; i ++)
 	{
-	  std::vector<double> tempMb;
 	  tempMb = multiply(M, X[i]);
 	  CGSolver sol(*A);
 	  sol.solve(X[i], tempMb, 1.0e-5, A->m());
 	}
       transpose(X);
-      // std::cout<<"After CGSolver, the result of A^-1 * X is \n";
-      // show_matrix(X);
+      //Z = X;
+
       GS_M(X);
+
+
+      /*Following part are the algorithm of subspace iteration method to get several eigenpairs;
+       *
+       */
+            /************************************************
+      for (int i=0; i<p; i++)
+	{
+	  for(int j=0; j<p; j++)
+	    {
+	      tempZ[i][j] = Z[i][j];
+	      tempQ[i][j] = X[i][j];
+	    }
+	}
+
+      transpose(tempZ);
+      for(int i=0;i<p;i++)
+	{
+	  Gauss(tempQ, R[i], tempZ[i]);
+	}
+      transpose(tempZ);
+
+
+      res = 0;
+      transpose(X);
+      for(int i = 0;i < p ; i ++)
+	{
+	  tempMb =multiply(M,X[i]);
+	  CGSolver sol2(*A);
+	  sol2.solve(tempaX, tempMb, 1.0e-5,A->m());
+	  temp_eig = R[i][i];
+	  AYPX(-1.0*temp_eig, X[i], tempaX);
+	  if(res<infi_Norm(tempaX))
+	    {
+	      res = infi_Norm(tempaX);
+	    }
+	}
+
+      //  std::cout<<"The residual is ::\n";
+      // std::cout<<res<<std::endl;
+      transpose(X);
+
+            */////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      
       // std::cout<<"After M-GS, the result of X is\n";
       // show_matrix(X);
 
 
       ////// Begin to compute X'* M^-1 * A *X;
-      //H=get_AX(X);
+      H=get_AX(X);
+      multiply(H,X);
       // std::cout<<"The matrix A*X is \n";
       // show_matrix(H);
 
 
       ////// Compute M^-1 * A *X
       
-
+      /////////////// The R-R step in this algorithm might be useless, Ritz vectors converges to eigenvectors but not the p smallest; 
       //////// Then we can get the matrix M^-1 * A * X;
-      transpose(X);
-      H = X;
-      transpose(X);
-      MAX = get_MAX(X);
       
-      multiply(H, MAX); // Compute the matrix H = Q* A Q;
+      // transpose(X);
+      //  H = X;
+      // transpose(X);
+      // MAX = get_MAX(X);
+      
+      //multiply(H, MAX); // Compute the matrix H = Q* A Q;
       // std::cout<<"Matrix X' * M *X is \n";
       // show_matrix(H);
       //  std::cout<<"The size of matrix X'*M*X is "<<H.size()<<" x "<<H[0].size()<<"\n";
@@ -313,6 +361,9 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
       // std::cout<<"Matrix X :\n";
       // show_matrix(X);
       // get_residual ;
+     
+
+      
       res=0;
       for (int i = 0; i < p; i ++)
 	{
@@ -340,13 +391,16 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
 	      res=infi_Norm(tempX);
 	    }
 	}
+      
      
       if (res<tol)
 	{
+	  std::cout<<"After "<<k+1<<" iterations, \n";
 	  lambda.clear();
-	  for(int j=0; j<H.size();j++)
+	  for(int j=0; j<p;j++)
 	    {
 	      lambda.push_back(H[j][j]);
+	      //lambda.push_back(1./R[j][j]); //for subspace method;
 	    }
 	  std::cout<<"The residual is "<<res<<"\n";
 	  return;
@@ -355,11 +409,13 @@ void EigenSolver::BIPowerSolve(std::vector<std::vector<double>>& X,
       k++;
     }
   lambda.clear();
-  for(int j=0; j<H.size();j++)
+  for(int j=0; j<p;j++)
     {
+      //lambda.push_back(1./R[j][j]); //for subspace method;
       lambda.push_back(H[j][j]);
     }
   std::cout<<"The maximum number of iteration exceeded.\n";
+  std::cout<<"The error is :: "<<res<<"\n";
   // std::cout<<"The numerical value of eigenvalues are :\n";
 }
 

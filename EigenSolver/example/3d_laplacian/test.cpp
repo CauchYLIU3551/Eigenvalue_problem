@@ -30,13 +30,13 @@
 #include <CG/CGSolver.h>
 #include <EigenSolver/Miscellaneous.h>
 #include <EigenSolver/EigenSolver.h>
-#define DIM 2
+#define DIM 3 
 #define PI (4.0*atan(1.0)) 
 
 /// 初值和边值的表达式
 double _u_(const double * p)
 {
-  return sin(PI*p[0]) * sin(PI*p[1]);
+  return sin(PI*p[0]) * sin(PI*p[1]) *sin(PI*p[2]);
   //return sin(PI*p[0]) * sin(2*PI*p[1]);
   //return p[0]*exp(p[1]);
 }
@@ -146,7 +146,7 @@ void boundary_condition_apply(const FEMSpace<double, DIM>& sp,
   for(u_int i=0; i< n_dof; ++ i)
   {
 	  int bm = sp.dofInfo(i).boundary_mark;
-	  std::cout<<"The "<<i<<"-th dof corresponding boundary mark is:"<<bm<<std::endl;
+	  //std::cout<<"The "<<i<<"-th dof corresponding boundary mark is:"<<bm<<std::endl;
   }
  
   int numOfbm = 0; 
@@ -174,17 +174,18 @@ void boundary_condition_apply(const FEMSpace<double, DIM>& sp,
     }
   }
   
-  std::cout<<"!@@@@@@@@@@The number of Dirchlet is :"<<numOfbm<<std::endl;    
+//  std::cout<<"!@@@@@@@@@@The number of Dirchlet is :"<<numOfbm<<std::endl;    
     
 }
 
 int main(int argc, char * argv[])
 {
   /// 准备网格
-  EasyMesh mesh;
+  Mesh<DIM> mesh;
   mesh.readData(argv[1]);
 
   /// 准备参考单元
+  /*
   TemplateGeometry<DIM> tmp_geo;
   tmp_geo.readData("triangle.tmp_geo");
   CoordTransform<DIM,DIM> crd_trs;
@@ -193,12 +194,22 @@ int main(int argc, char * argv[])
   tmp_dof.readData("triangle.2.tmp_dof");
   BasisFunctionAdmin<double,DIM,DIM> bas_fun(tmp_dof);
   bas_fun.readData("triangle.2.bas_fun");
+*/
+  TemplateGeometry<DIM> tmp_geo;
+  tmp_geo.readData("tetrahedron.tmp_geo");
+  CoordTransform<DIM,DIM> crd_trs;
+  crd_trs.readData("tetrahedron.crd_trs");
+  TemplateDOF<DIM> tmp_dof(tmp_geo);
+  tmp_dof.readData("tetrahedron.1.tmp_dof");
+  BasisFunctionAdmin<double,DIM,DIM> bas_fun(tmp_dof);
+  bas_fun.readData("tetrahedron.1.bas_fun");
 
-  std::vector<TemplateElement<double,DIM> > tmp_ele(1);
+  std::vector<TemplateElement<double,DIM,DIM> > tmp_ele(1);
   tmp_ele[0].reinit(tmp_geo, tmp_dof, crd_trs, bas_fun);
 
   /// 定制有限元空间
-  FEMSpace<double,DIM> fem_space(mesh, tmp_ele);
+  FEMSpace<double,DIM> fem_space;
+  fem_space.reinit(mesh, tmp_ele);
   u_int n_ele = mesh.n_geometry(DIM);
   fem_space.element().resize(n_ele);
   for (u_int i = 0;i < n_ele;++ i) {
@@ -234,12 +245,12 @@ int main(int argc, char * argv[])
   mat.build();*/
 
 
-  StiffMatrix<2,double> stiff_matrix(fem_space);
+  StiffMatrix<DIM,double> stiff_matrix(fem_space);
   stiff_matrix.algebricAccuracy() = 4;
   stiff_matrix.build();
   boundary_condition_apply(fem_space, stiff_matrix, boundary_admin);
 
-  MassMatrix<2,double> mass_matrix(fem_space);
+  MassMatrix<DIM,double> mass_matrix(fem_space);
   mass_matrix.algebricAccuracy() = 4;
   mass_matrix.build();
   boundary_condition_apply(fem_space, mass_matrix, boundary_admin);

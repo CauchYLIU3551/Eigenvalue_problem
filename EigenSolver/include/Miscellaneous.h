@@ -639,3 +639,64 @@ void QRSolver(std::vector<std::vector<double>> &a, std::vector<std::vector<doubl
         }
     }
 };
+
+
+// This function using Gauss elimination to solve some simple linear equations;
+void Gauss(std::vector<std::vector<double>> A, std::vector<double>&x, std::vector<double> b )
+{
+  double tol = 1.e-10, m;
+  int n=A.size();
+  std::vector<double> tempVec;
+  for (int i=0;i<A.size();i++)
+    {
+      A[i].push_back(b[i]);
+    }
+  for(int i =0;i<n-1;i++)
+    {
+      int p = -1;
+      // find p be the smallest integer with i<=p<=n and A[p,i]!=0;
+      for(int k = i;k<n;k++)
+        {
+          if(fabs(A[k][i])>tol)
+            {
+              p = k;
+              break;
+            }
+        }
+      if (p==-1)
+        {
+          std::cout<<"No unique solution exists!\n";
+          break;
+        }
+
+      if(p != i)
+        {
+          tempVec = A[p];
+          A[p] = A[i];
+          A[i] = tempVec;
+        }
+      for (int j=i+1;j<n;j++)
+        {
+          m=A[j][i]/A[i][i];
+          AYPX(-1.0*m, A[i], A[j]);
+        }
+    }
+  if (fabs(A[n-1][n-1])<tol)
+    {
+      std::cout<<"No unique solution exists!\n";
+      return;
+    }
+  
+  // Start backward substitution;
+  x[n-1] = A[n-1][n]/A[n-1][n-1];
+  for (int i=n-2; i >=0;i--)
+    {
+      double temp_sum = 0.;
+      for(int j = i+1;j<n;j++)
+	{
+	  temp_sum+=A[i][j]*x[j];
+	}
+      x[i] = (A[i][n] - temp_sum)/A[i][i];
+    }
+
+}

@@ -28,7 +28,7 @@ class EigenSolver
 		    std::vector<double>& lambda,
 		    int p,
 		    int max_iter = 100,
-		    double tol = 1.e-3);
+		    double tol = 1.e-5);
   // Get (AX)T;
   std::vector<std::vector<double>> get_AX(std::vector<std::vector<double>> X);
   // Get M^-1 * A * X;
