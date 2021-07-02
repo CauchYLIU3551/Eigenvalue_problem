@@ -21,19 +21,19 @@ int main()
   // fun3(a,&b);
   std::cout<<*b<<std::endl;
   CGSolver AAA;
-  dealii::SparseMatrix<double> A, A2, M;
+  dealii::SparseMatrix<double> A, A2, M, M2;
   // std::ofstream sparsematrix1 ("original_matrix.1");
   //A.print(sparsematrix1);
   std::vector<unsigned int> row_length(10,10);
   unsigned int t=3;
   dealii::SparsityPattern sparsity_pattern(10,10,{2,3,3,3,3,3,3,3,3,2});
   dealii::SparsityPattern sp2(3,3,{2,3,2});
-  dealii::SparsityPattern sp3(3,3,{1,1,1});
+  dealii::SparsityPattern sp3(3,3,{1,1,1}), sp4(10,10,{1,1,1,1,1,1,1,1,1,1});
   sp2.add(0,1);
   sp2.add(1,0);
   sp2.add(1,2);
   sp2.add(2,1);
-  sparsity_pattern.add(1,2);
+  //sparsity_pattern.add(1,2);
   sparsity_pattern.add(0,1);
   sparsity_pattern.add(9,8);
   for (int i=1;i<9;i++)
@@ -45,6 +45,7 @@ int main()
   A.reinit(sparsity_pattern);
   M.reinit(sp2);
   A2.reinit(sp3);
+  M2.reinit(sp4);
     // In this way, I can construct a SparseMatrix to be the test data for the algorithm.
   for (int k=0;k<A.m();k++)
     {
@@ -83,6 +84,14 @@ int main()
         }
     }
 
+  for (int k=0;k<M2.m();k++)
+    {
+      dealii::SparseMatrix<double>::iterator i=M2.begin(k);
+      i->value()=k+1;
+      
+    }
+
+
  // Construct the right hand side matrix in example as A2. 
     for (int k=0;k<A2.m();k++)
     {
@@ -95,7 +104,7 @@ int main()
 
   //std::cout<<AAA.tolerence()<<std::endl;
   //CGSolver solve(A), sol2(M);
-  EigenSolver sol3(M,A2);
+  EigenSolver sol3(M,A2),sol4(A,M2);
   std::ofstream sparsematrix2 ("sparse_matrix.2");
   A.print(sparsematrix2);
   //std::cout<<solve.A->n()<<std::endl;
@@ -173,10 +182,61 @@ int main()
   std::cout<<"The eigenvectors are:\n";
   show_matrix(x3);
 
+
+
+
+  eig_num=3;
+  std::vector<double> tempx4(eig_num, 0), lam_4(eig_num,0);
+  std::vector<std::vector<double>> x4(A.m(), tempxx);
+  //x3[0][0]=1;
+  //x3[1][1]=1;
+  //x3[2][2]=1;
+  for (int i=0;i<x4.size();i++)
+  {
+    for(int j=0;j<x4[0].size();j++)
+    {
+      x4[i][j] = ((double) rand() / (RAND_MAX));
+    }
+  }
+  std::cout<<"The initial matrix x4 is :: \n";
+  show_matrix(x4);
+  sol4.LOBPCGSolve(x4,lam_4,eig_num,100);
+    for (int k=0;k<eig_num;k++)
+  {
+    std::cout<<lam_4[k]<<" ";
+  }
+  std::cout<<"\n";
+
+
+
+ // std::cout<<"The eigenvectors are:\n";
+ // show_matrix(x3);
+ 
+
   // std::cout<<(*P).n()<<std::endl;
   std::ofstream sparsematrix ("sparse_matrix.2");
   M.print(sparsematrix);
   std::ofstream sparsematrixA ("sparse_matrixA");
   A2.print(sparsematrixA);
+
+  std::ofstream sparsematrix4 ("matrixA");
+  A.print(sparsematrix4);
+
+
+  std::filebuf fb;
+  fb.open ("stiff_matrix.txt",std::ios::out);
+  std::ostream os(&fb);
+  A.print_formatted(os, 3, true, 0, "0.0", 1);
+  fb.close();
+
+  std::filebuf fb2;
+  fb2.open ("mass_matrix.txt",std::ios::out);
+  std::ostream os2(&fb2);
+  M2.print_formatted(os2, 3, true, 0, "0.0", 1);
+  fb2.close();
+
+
+
+
   return 0;
 }

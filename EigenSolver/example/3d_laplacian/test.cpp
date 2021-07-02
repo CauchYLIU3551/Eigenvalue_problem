@@ -146,7 +146,6 @@ void boundary_condition_apply(const FEMSpace<double, DIM>& sp,
   for(u_int i=0; i< n_dof; ++ i)
   {
 	  int bm = sp.dofInfo(i).boundary_mark;
-	  //std::cout<<"The "<<i<<"-th dof corresponding boundary mark is:"<<bm<<std::endl;
   }
  
   int numOfbm = 0; 
@@ -155,9 +154,8 @@ void boundary_condition_apply(const FEMSpace<double, DIM>& sp,
     if (bm == 0) continue;
     // For this case only 1 for Drichlet boundary condition.
     if (bm != 1) continue; // Attention, For this case specially.
-
+    
     numOfbm += 1;
-
     for (u_int j = rowstart[i]+1; j < rowstart[i+1]; ++ j){
 	    A.global_entry(j) -= A.global_entry(j);
     }
@@ -173,9 +171,6 @@ void boundary_condition_apply(const FEMSpace<double, DIM>& sp,
       }
     }
   }
-  
-//  std::cout<<"!@@@@@@@@@@The number of Dirchlet is :"<<numOfbm<<std::endl;    
-    
 }
 
 int main(int argc, char * argv[])
