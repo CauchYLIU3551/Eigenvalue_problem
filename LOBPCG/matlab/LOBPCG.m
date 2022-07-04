@@ -22,22 +22,26 @@
 ## Author: root <root@AFEPack01>
 ## Created: 2021-07-01
 
-function [eigenvalues, eigenvectors] = LOBPCG (A, B, p, tol=10^-5, max_iter=100)
+function [eigenvalues, eigenvectors, residual] = LOBPCG (A, B, p, tol=10^-5, max_iter=100)
   [m,n] = size(A);
   x = rand(m,p);
   mu = zeros(p,1);
   r = zeros(m,p);
-  x0 = zeros(m,p);
-  for i=1:1%max_iter
+  x0 = rand(m,p);
+  residual = [];
+  tempr = zeros(p,1);
+  for i=1:max_iter
     for j=1:p
       tempx = x(:,j);
       Ax = A*tempx;
       Bx = B*tempx;
       mu(j) = tempx'*Bx/(tempx'*Ax);
       r(:,j) = Bx - mu(j)*Ax;
+      tempr(j) = max(max(abs(r(:,j))));
     endfor
-    r
-    mu
+    %r
+    %mu
+    residual = [residual,tempr];
     if max(max(abs(r)))<tol
       break
     endif
@@ -52,7 +56,7 @@ function [eigenvalues, eigenvectors] = LOBPCG (A, B, p, tol=10^-5, max_iter=100)
     x0 = x;
     x = tempM*u(:,index(1:p));  
   endfor
-  eigenvalues = mu;
+  eigenvalues = 1./mu;
   eigenvectors = x;
 
 endfunction
